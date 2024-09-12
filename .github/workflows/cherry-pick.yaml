@@ -36,6 +36,7 @@ jobs:
 
   cherry_pick:
     needs: find_branches
+    name: Create cherry-pick pull request
     runs-on: ubuntu-latest
     strategy:
       matrix:
