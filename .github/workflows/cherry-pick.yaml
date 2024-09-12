@@ -1,0 +1,57 @@
+name: Cherry pick from main to release branches
+
+on:
+  pull_request_target:
+    branches:
+      - main
+    types: ["closed"]
+
+permissions: {}
+
+jobs:
+  find_branches:
+    runs-on: ubuntu-latest
+    name: Find branches to check-pick
+    permissions:
+      pull-requests: write
+      contents: write
+    if: ${{ github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'cherry-pick/') }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract cherry-pick labels
+        id: extract_labels
+        run: |
+          cherry_pick_branches=$(for label in "${{ github.event.pull_request.labels.*.name }}"; do
+            if [[ $label == cherry-pick/* ]]; then
+              branch=${label#cherry-pick/}
+              echo $branch
+            fi
+          done)
+          echo "cherry_pick_branches=$cherry_pick_branches" >> $GITHUB_ENV
+
+  cherry_pick:
+    needs: find_branches
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branch: ${{ fromJson(env.cherry_pick_branches) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cherry pick to branch ${{ matrix.branch }}
+        uses: carloscastrojumo/github-cherry-pick-action@v1.0.10
+        with:
+          branch: ${{ matrix.branch }}
+          body: "Cherry-pick of PR #${{ github.event.pull_request.number }} to branch ${{ matrix.branch }}."
+          cherry-pick-branch: ${{ format('cherry-pick-{0}-{1}', github.event.number, matrix.branch) }}
+          title: "[${{ matrix.branch }}] Cherry-pick: ${{ github.event.pull_request.title }}"
+          labels: |
+            cherry-pick
