@@ -27,10 +27,9 @@ jobs:
         id: extract_labels
         run: |
           cherry_pick_branches=$(for label in "${{ github.event.pull_request.labels.*.name }}"; do
-            echo "checking $label"
             if [[ $label == cherry-pick/* ]]; then
               branch=${label#cherry-pick/}
-              echo "found branch $branch"
+              echo $branch
             fi
           done | jq -R -s -c 'split("\n")[:-1]')
           echo "::set-output name=cherry_pick_branches::$cherry_pick_branches"
@@ -39,6 +38,7 @@ jobs:
     needs: find_branches
     name: Create cherry-pick pull request
     runs-on: ubuntu-latest
+    if: ${{ needs.find_branches.outputs.cherry_pick_branches != '[]' && needs.find_branches.outputs.cherry_pick_branches != '' }}
     strategy:
       matrix:
         branch: ${{ fromJson(needs.find_branches.outputs.cherry_pick_branches) }}
