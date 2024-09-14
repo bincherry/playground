@@ -26,6 +26,7 @@ jobs:
       - name: Extract cherry-pick labels
         id: extract_labels
         run: |
+          echo $github.event.pull_request.labels
           cherry_pick_branches=$(for label in "${{ github.event.pull_request.labels.*.name }}"; do
             if [[ $label == cherry-pick/* ]]; then
               branch=${label#cherry-pick/}
@@ -33,7 +34,7 @@ jobs:
             fi
           done | jq -R -s -c 'split("\n")[:-1]')
           echo $cherry_pick_branches
-          echo "CHERRY_PICK_BRANCHES=$cherry_pick_branches" >> $GITHUB_STATE
+          echo "CHERRY_PICK_BRANCHES=$cherry_pick_branches" >> $GITHUB_ENV
 
   cherry_pick:
     needs: find_branches
