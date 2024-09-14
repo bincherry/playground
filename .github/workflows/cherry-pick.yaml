@@ -32,16 +32,17 @@ jobs:
               echo $branch
             fi
           done | jq -R -s -c 'split("\n")[:-1]')
-          echo "::set-output name=cherry_pick_branches::$cherry_pick_branches"
+          echo $cherry_pick_branches
+          echo "CHERRY_PICK_BRANCHES=$cherry_pick_branches" >> $GITHUB_STATE
 
   cherry_pick:
     needs: find_branches
     name: Create cherry-pick pull request
     runs-on: ubuntu-latest
-    if: ${{ needs.find_branches.outputs.cherry_pick_branches != '[]' && needs.find_branches.outputs.cherry_pick_branches != '' }}
+    if: ${{ $CHERRY_PICK_BRANCHES != '[]' && $CHERRY_PICK_BRANCHES != '' }}
     strategy:
       matrix:
-        branch: ${{ fromJson(needs.find_branches.outputs.cherry_pick_branches) }}
+        branch: ${{ fromJson($CHERRY_PICK_BRANCHES ) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
