@@ -23,11 +23,27 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Get PR labels
+        id: get_labels
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const labels = await github.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            // Output the labels as a comma-separated list
+            const labelNames = labels.data.map(label => label.name).join(',');
+            console.log(`PR labels: ${labelNames}`);
+            return labelNames;
+
       - name: Extract cherry-pick labels
         id: extract_labels
         run: |
           echo $github.event.pull_request.labels
-          cherry_pick_branches=$(for label in "${{ github.event.pull_request.labels.*.name }}"; do
+          cherry_pick_branches=$(for label in "${{ steps.get_labels.outputs.result }}"; do
             if [[ $label == cherry-pick/* ]]; then
               branch=${label#cherry-pick/}
               echo $branch
