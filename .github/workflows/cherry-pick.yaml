@@ -28,7 +28,7 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const labels = await github.issues.listLabelsOnIssue({
+            const labels = await github.rest.issues.listLabelsOnIssue({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
@@ -42,7 +42,6 @@ jobs:
       - name: Extract cherry-pick labels
         id: extract_labels
         run: |
-          echo $github.event.pull_request.labels
           cherry_pick_branches=$(for label in "${{ steps.get_labels.outputs.result }}"; do
             if [[ $label == cherry-pick/* ]]; then
               branch=${label#cherry-pick/}
