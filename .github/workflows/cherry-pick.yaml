@@ -16,6 +16,8 @@ jobs:
       pull-requests: write
       contents: write
     if: ${{ github.event.pull_request.merged == true }}
+    outputs:
+      CHERRY_PICK_BRANCHES: ${{ steps.extract_labels.outputs.CHERRY_PICK_BRANCHES }}
 
     steps:
       - name: Checkout
@@ -25,7 +27,7 @@ jobs:
 
       - name: Get PR labels
         id: get_labels
-        uses: actions/github-script@v6
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
         with:
           script: |
             const labels = await github.rest.issues.listLabelsOnIssue({
