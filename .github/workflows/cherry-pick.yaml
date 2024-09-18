@@ -40,7 +40,6 @@ jobs:
     needs: find_branches
     name: Create cherry-pick pull request
     runs-on: ubuntu-latest
-    if: ${{ $CHERRY_PICK_BRANCHES != '[]' && $CHERRY_PICK_BRANCHES != '' }}
     strategy:
       matrix:
         branch: ${{ fromJson(needs.find_branches.outputs.CHERRY_PICK_BRANCHES) }}
