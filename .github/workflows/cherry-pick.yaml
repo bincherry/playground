@@ -34,7 +34,7 @@ jobs:
             fi
           done | jq -R -s -c 'split("\n")[:-1]')
           echo $cherry_pick_branches
-          echo "CHERRY_PICK_BRANCHES=$cherry_pick_branches" >> $GITHUB_ENV
+          echo "CHERRY_PICK_BRANCHES=$cherry_pick_branches" >> $GITHUB_OUTPUT
 
   cherry_pick:
     needs: find_branches
@@ -43,7 +43,7 @@ jobs:
     if: ${{ $CHERRY_PICK_BRANCHES != '[]' && $CHERRY_PICK_BRANCHES != '' }}
     strategy:
       matrix:
-        branch: ${{ fromJson($CHERRY_PICK_BRANCHES ) }}
+        branch: ${{ fromJson(needs.find_branches.outputs.CHERRY_PICK_BRANCHES) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
