@@ -55,8 +55,11 @@ jobs:
 
   cherry_pick:
     needs: find_branches
-    name: Create cherry-pick pull request
     runs-on: ubuntu-latest
+    name: Create cherry-pick pull request
+    permissions:
+      pull-requests: write
+      contents: write
     strategy:
       matrix:
         branch: ${{ fromJson(needs.find_branches.outputs.CHERRY_PICK_BRANCHES) }}
