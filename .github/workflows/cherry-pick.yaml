@@ -9,24 +9,16 @@ on:
 permissions: {}
 
 jobs:
-  find_branches:
+  get_branches:
     runs-on: ubuntu-latest
-    name: Find branches to check-pick
-    permissions:
-      pull-requests: write
-      contents: write
+    name: Get branches to check-pick
     if: ${{ github.event.pull_request.merged == true }}
     outputs:
-      CHERRY_PICK_BRANCHES: ${{ steps.extract_labels.outputs.CHERRY_PICK_BRANCHES }}
+      CHERRY_PICK_BRANCHES: ${{ steps.get_and_extract_labels.outputs.CHERRY_PICK_BRANCHES }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Get PR labels
-        id: get_labels
+      - name: Get and Extract cherry-pick labels
+        id: get_and_extract_labels
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
         with:
           script: |
@@ -39,22 +31,19 @@ jobs:
             // Output the labels as a comma-separated list
             const labelNames = labels.data.map(label => label.name).join(',');
             console.log(`PR labels: ${labelNames}`);
-            return labelNames;
 
-      - name: Extract cherry-pick labels
-        id: extract_labels
-        run: |
-          cherry_pick_branches=$(for label in "${{ steps.get_labels.outputs.result }}"; do
-            if [[ $label == cherry-pick/* ]]; then
-              branch=${label#cherry-pick/}
-              echo $branch
-            fi
-          done | jq -R -s -c 'split("\n")[:-1]')
-          echo $cherry_pick_branches
-          echo "CHERRY_PICK_BRANCHES=$cherry_pick_branches" >> $GITHUB_OUTPUT
+            // Filter cherry-pick labels and extract branch names
+            const cherryPickBranches = labels.data
+              .map(label => label.name)
+              .filter(name => name.startsWith('cherry-pick/'))
+              .map(name => name.substring('cherry-pick/'.length));
+
+            console.log(`Cherry-pick branches: ${cherryPickBranches}`);
+
+            core.setOutput('CHERRY_PICK_BRANCHES', JSON.stringify(cherryPickBranches));
 
   cherry_pick:
-    needs: find_branches
+    needs: get_branches
     runs-on: ubuntu-latest
     name: Create cherry-pick pull request
     permissions:
@@ -62,7 +51,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        branch: ${{ fromJson(needs.find_branches.outputs.CHERRY_PICK_BRANCHES) }}
+        branch: ${{ fromJson(needs.get_branches.outputs.CHERRY_PICK_BRANCHES) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
